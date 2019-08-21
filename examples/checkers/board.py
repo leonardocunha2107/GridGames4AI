@@ -70,7 +70,7 @@ class Checkers:
             elif self.__turn==self.BLACK and (pos1 in [(i0-1,j0-1),(i0-1,j0+1)] or (pos_eaten and pos_eaten in [(i0-1,j0-1),(i0-1,j0+1)])):
                 return True,pos_eaten
         return False,None
-    def __posible_moves(self,pos0):
+    def __possible_moves(self,pos0):
         res=[]
         i0,j0=pos0
         if self.__is_queen[pos0]:
@@ -79,14 +79,14 @@ class Checkers:
                 if check:
                     res.append((pos,pos_eaten))
         else:
-            for ki,kj in zip([-2,-1,1,2],[-2,-1,1,2]):
+            for ki,kj in list(zip([-2,-1,1,2],[-2,-1,1,2]))+list(zip([2,1,-1,-2],[-2,-1,1,2])):
                 pos=(i0+ki,j0+kj)
                 check,pos_eaten=self.__can_move_and_eaten(pos0,pos)
                 if check:
                     res.append((pos,pos_eaten))
         return res
     def __can_eat(self,pos0):
-        for pos,pos_eaten in self.__posible_moves(pos0):
+        for pos,pos_eaten in self.__possible_moves(pos0):
             if pos_eaten:
                 return True
         return False
@@ -102,8 +102,9 @@ class Checkers:
             raise GameException("Invalid start position mate")
         if self.__board[pos0]!=self.__turn:
             raise GameException("Not your turn mate")
+        print(pos0,self.__possible_moves(pos0))
         eatable_pos=[p for p in self.__pieces[self.__turn] if self.__can_eat(p) ]
-        
+        print((pos0,pos1),eatable_pos)
         check,eaten=self.__can_move_and_eaten(pos0,pos1)
         if not check:
             raise GameException("Invalid Move mate")
