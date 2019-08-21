@@ -17,7 +17,7 @@ class Checkers:
         self.__is_queen=np.zeros((8,8))
         self.__pieces={self.WHITE:set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.WHITE])}
         self.__pieces[self.BLACK]=set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.BLACK])
-        self.__can_backward=True
+        #self.__can_backward=True
         self.turn_count=1
     def __change_turn(self):
         self.__turn=self.OTHER[self.__turn]
@@ -63,11 +63,9 @@ class Checkers:
             check,pos_eaten=self.__jumped_pos(pos0,pos1)
             if self.__is_queen[pos0] and check and not self.__can_backward:
                 return True,pos_eaten
-            elif self.__can_backward and pos_eaten and pos_eaten in self.__norm_pos(pos0):
+            if self.__turn==self.WHITE and (pos1 in [(i0+1,j0-1),(i0+1,j0+1)] or (pos_eaten and pos_eaten in [(i0+1,j0-1),(i0+1,j0+1)])):
                 return True,pos_eaten
-            elif self.__turn==self.WHITE and (pos1 in [(i0+1,j0-1),(i0+1,j0+1)] or (pos_eaten and pos_eaten in [(i0+1,j0-1),(i0+1,j0+1)])):
-                return True,pos_eaten
-            elif self.__turn==self.BLACK and (pos1 in [(i0-1,j0-1),(i0-1,j0+1)] or (pos_eaten and pos_eaten in [(i0-1,j0-1),(i0-1,j0+1)])):
+            if self.__turn==self.BLACK and (pos1 in [(i0-1,j0-1),(i0-1,j0+1)] or (pos_eaten and pos_eaten in [(i0-1,j0-1),(i0-1,j0+1)])):
                 return True,pos_eaten
         return False,None
     def __possible_moves(self,pos0):
@@ -102,10 +100,10 @@ class Checkers:
             raise GameException("Invalid start position mate")
         if self.__board[pos0]!=self.__turn:
             raise GameException("Not your turn mate")
-        print(pos0,self.__possible_moves(pos0))
         eatable_pos=[p for p in self.__pieces[self.__turn] if self.__can_eat(p) ]
         print((pos0,pos1),eatable_pos)
         check,eaten=self.__can_move_and_eaten(pos0,pos1)
+        print((pos0,pos1),eaten)
         if not check:
             raise GameException("Invalid Move mate")
         if not eaten and eatable_pos:
@@ -125,11 +123,18 @@ class Checkers:
         if not self.__pieces[self.OTHER[player]]:
             s={self.WHITE:"Whites",self.BLACK: "Blacks"}
             raise GameFinish("{} won".format(s[player]))
-        self.__can_backward=True
+        aux=self.__is_queen[p1]
+        self.__is_queen[p1]=0
         if not self.__can_eat(pos1):
-            self.__can_backward=False
             self.__turn=self.OTHER[player]
             self.turn_count+=1
+        self.__is_queen[p1]=aux
+    def set_board(self,board,turn=self.WHITE,is_queen=[]):
+        self.__board=board
+        self.__pieces={self.WHITE:set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.WHITE])}
+        self.__pieces[self.BLACK]=set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.BLACK])
+        for pos in is_queen:
+            self.__is_queen[pos]=1
     def ascii_board(self):
         symbol={self.EMPTY:'-',self.BLACK:'#',self.WHITE:'@'}
         res=["Turn: {}".format(self.turn_count),"Blacks: {}  Whites: {}".format(symbol[self.BLACK],symbol[self.WHITE])]
