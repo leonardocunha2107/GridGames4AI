@@ -1,8 +1,8 @@
 import numpy as np
 import itertools
-from status import *
+from framework import *
         
-class Checkers:
+class Checkers(GridInterface):
     EMPTY=0
     WHITE=1
     BLACK=2
@@ -92,18 +92,24 @@ class Checkers:
         i,j=pos
         if (self.__turn==self.WHITE and i==7) or  (self.__turn==self.BLACK and i==0):
             self.__is_queen[pos]=1
-    def get_board(self):
-        return self.__board
-    def move(self,pos0,pos1):
+    def __str__(self):
+        symbol={self.EMPTY:'-',self.BLACK:'#',self.WHITE:'@'}
+        res=["Turn: {}".format(self.turn_count),"Blacks: {}  Whites: {}".format(symbol[self.BLACK],symbol[self.WHITE])]
+        res.append("It's {} turn \n".format(symbol[self.__turn]))
+        line_idx=' '.join([str(i) for i in range(0,8)])
+        res.append("  {}".format(line_idx))
+        for i in range(8):
+            res.append("{} {}".format(i,' '.join([symbol[t] for t in self.__board[i,:]])))
+        return '\n'.join(res)
+    
+    def __move(self,pos0,pos1):
         i0,j0=pos0
         if not (0<=i0<8 and 0<=j0<8):
             raise GameException("Invalid start position mate")
         if self.__board[pos0]!=self.__turn:
             raise GameException("Not your turn mate")
         eatable_pos=[p for p in self.__pieces[self.__turn] if self.__can_eat(p) ]
-        print((pos0,pos1),eatable_pos)
         check,eaten=self.__can_move_and_eaten(pos0,pos1)
-        print((pos0,pos1),eaten)
         if not check:
             raise GameException("Invalid Move mate")
         if not eaten and eatable_pos:
@@ -123,27 +129,38 @@ class Checkers:
         if not self.__pieces[self.OTHER[player]]:
             s={self.WHITE:"Whites",self.BLACK: "Blacks"}
             raise GameFinish("{} won".format(s[player]))
-        aux=self.__is_queen[p1]
-        self.__is_queen[p1]=0
+        aux=self.__is_queen[pos1]
+        self.__is_queen[pos1]=0
         if not self.__can_eat(pos1):
             self.__turn=self.OTHER[player]
             self.turn_count+=1
-        self.__is_queen[p1]=aux
-    def set_board(self,board,turn=self.WHITE,is_queen=[]):
+        self.__is_queen[pos1]=aux
+    def set_board(self,board,turn=None,is_queen=[]):
+        if turn not in [ None,self.BLACK,self.WHITE]:
+            raise Exception("Unvalid turn parameter")
+        if not turn:
+            turn = self.WHITE
+        self.__turn=turn
         self.__board=board
         self.__pieces={self.WHITE:set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.WHITE])}
         self.__pieces[self.BLACK]=set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.BLACK])
         for pos in is_queen:
             self.__is_queen[pos]=1
-    def ascii_board(self):
-        symbol={self.EMPTY:'-',self.BLACK:'#',self.WHITE:'@'}
-        res=["Turn: {}".format(self.turn_count),"Blacks: {}  Whites: {}".format(symbol[self.BLACK],symbol[self.WHITE])]
-        res.append("It's {} turn \n".format(symbol[self.__turn]))
-        line_idx=' '.join([str(i) for i in range(0,8)])
-        res.append("  {}".format(line_idx))
-        for i in range(8):
-            res.append("{} {}".format(i,' '.join([symbol[t] for t in self.__board[i,:]])))
-        return '\n'.join(res)
+    def get_board(self):
+        return self.__board
+    
+    def get_spec(self):
+        #TODO
+        return {}
+    def get_actions(self):
+        return [pos0+poss[0] for pos0 in self.__pieces[self.__turn] 
+                for poss in self.__possible_moves(pos0)]
+    def get_turn(self):
+        return self.__turn
+    def move(self,tup):
+        self.__move(tup[:2],tup[2:])
+    
+        
             
         
         
