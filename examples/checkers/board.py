@@ -5,7 +5,7 @@ from framework import *
 class Checkers(GridInterface):
     EMPTY=0
     WHITE=1
-    BLACK=2
+    BLACK=3
     OTHER={WHITE:BLACK,BLACK:WHITE}
     def __init__(self):
         EMPTY_LINE=[self.EMPTY]*8
@@ -17,7 +17,6 @@ class Checkers(GridInterface):
         self.__is_queen=np.zeros((8,8))
         self.__pieces={self.WHITE:set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.WHITE])}
         self.__pieces[self.BLACK]=set([p for p in itertools.product(range(8),range(8)) if self.__board[p]==self.BLACK])
-        #self.__can_backward=True
         self.turn_count=1
     def __change_turn(self):
         self.__turn=self.OTHER[self.__turn]
@@ -128,7 +127,7 @@ class Checkers(GridInterface):
             self.__is_queen[eaten]=0
         if not self.__pieces[self.OTHER[player]]:
             s={self.WHITE:"Whites",self.BLACK: "Blacks"}
-            raise GameFinish("{} won".format(s[player]))
+            raise GameFinish(s[player],player)
         aux=self.__is_queen[pos1]
         self.__is_queen[pos1]=0
         if not self.__can_eat(pos1):
@@ -147,11 +146,14 @@ class Checkers(GridInterface):
         for pos in is_queen:
             self.__is_queen[pos]=1
     def get_board(self):
-        return self.__board
+        return np.where(self.__is_queen,self.__board+1,self.__board)
     
     def get_spec(self):
-        #TODO
-        return {}
+        
+        return {'players': {self.WHITE:[self.WHITE,self.WHITE+1],
+                            self.BLACK:[self.BLACK,self.BLACK+1]},\
+                'env_spaces':[self.EMPTY],
+                'action_range':((0,8),(0,8),(0,8),(0,8))}
     def get_actions(self):
         return [pos0+poss[0] for pos0 in self.__pieces[self.__turn] 
                 for poss in self.__possible_moves(pos0)]

@@ -8,6 +8,9 @@ class GridInterface:
     Methods
     -----------
     Required:
+        __init__:
+            Sets the state to the initial state. 
+            Must have a set of default values to assert proper implementation
         get_board: 
             Returns:  numpy.array(int)
             Must return a 2D representatoin of the game state
@@ -17,10 +20,11 @@ class GridInterface:
         get_actions:
             Returns: list(tuple(int))
             Must return a list of possible actions in current game state, each action represented by a tuple
+        
         get_turn: 
             Returns: int
             Return int representation of wh's turn it is in the current state
-        
+            
         move(tuple(int)):
             Execute action represented by tuple, raising GameException if not possible or GameFinish if arrived at end state
         
@@ -33,6 +37,12 @@ class GridInterface:
             Get ponctuation based on game ste or history, for one or each player
         
     """
+    def __init__(self):
+        """
+            Sets the state to the initial state. 
+            Must have a set of default values to assert proper implementation
+        """
+        raise InterfaceException("__init__ not implemented")
     def get_board(self):
         """
         Returns:  numpy.array(int)
@@ -43,8 +53,18 @@ class GridInterface:
     def get_spec(self):
         """
         Returns: dict
+        Get game specifications. Can be loaded from a json for example4
         Required parameters:
-            TODO
+            'players': dict[int,list[int]]
+                A dict tying wach player code, the same we would get in get_turn
+                and a list of pieces that belong to him
+            'env_spaces': list[int]
+                List of tokens that represent an environment space, e.g. wall or empty space
+            'action_range': tuple(tuple(int))
+                Tuple of 'ranges' indicating the range of values an action can take
+                E.g, for  chess or checkers it would be ((0,8),(0,8),(0,8),(0,8))
+                
+                
         Optional paramaeters:
             TODO
         """
