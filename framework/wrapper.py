@@ -32,5 +32,14 @@ class AIGame:
         except KeyError:
             raise TypeError("The function get_spec doesn't give sufficient specification")
         
+        self.grid_shape=game.get_board().shape
         self.max_turns=max_turns
+        
+        self.symmetric=spec.get("symmetric",True)
+        if self.symmetric:
+            a=[len(pieces) for pieces in self.pieces_toks]
+            if max(a)!=min(a):
+                raise TypeError("Game is set to symmetric but players don't have the same number of pieces")
+        
+        
             

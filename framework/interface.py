@@ -56,17 +56,19 @@ class GridInterface:
         Get game specifications. Can be loaded from a json for example4
         Required parameters:
             'players': dict[int,list[int]]
-                A dict tying wach player code, the same we would get in get_turn
+                A dict tying each player code, the same we would get in get_turn
                 and a list of pieces that belong to him
+                If we have a symmetric game, the pieces codes shold be ordered in the same way
             'env_spaces': list[int]
                 List of tokens that represent an environment space, e.g. wall or empty space
             'action_range': tuple(tuple(int))
                 Tuple of 'ranges' indicating the range of values an action can take
                 E.g, for  chess or checkers it would be ((0,8),(0,8),(0,8),(0,8))
-                
-                
-        Optional paramaeters:
-            TODO
+            
+        Optional parameters:
+            'symmetric': bool
+                Indicates if a game is symmetric, e.g. chess, that is if each player has pieces with same signification. Defaults to true
+            
         """
         raise InterfaceException("get_conf not implemented")
     
