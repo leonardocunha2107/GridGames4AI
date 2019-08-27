@@ -1,5 +1,7 @@
 import numpy as np
+import torch
 from .interface import GridInterface,InterfaceException
+from .status import GameException
 class AIGame:
     """
     Enforces GridInterface proper implementaton and wraps the game into an AI
@@ -49,7 +51,14 @@ class AIGame:
         self.game.__init__()
         self.turn=0
     def get_board(self):
-        return self.game.get_board()
+        return torch.tensor(self.game.get_board())
+    def try_move(self,move):
+        assert len(move)==len(self.action_range)
+        try:
+            self.game.move(move)
+            return True
+        except GameException:
+            return False
     
         
         

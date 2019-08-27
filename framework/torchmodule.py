@@ -102,11 +102,10 @@ class GridEncoder(nn.Module):
         return self.linear(x)
         
 class MultilayerLSTMCell(nn.Module):
-    def __init__(self,input_dim,hidden_dim,n_layers):
+    def __init__(self,input_dim,n_layers):
         super(MultilayerLSTMCell,self).__init__()
         self.input_dim=input_dim
-        self.hidden_dim=hidden_dim
-        self.layers=[nn.LSTMCell(input_dim,hidden_dim) for _ in range(n_layers)]
+        self.layers=[nn.LSTMCell(input_dim,input_dim) for _ in range(n_layers)]
         
         
         """
@@ -135,30 +134,30 @@ class ActionDecoder(nn.Module):
         self.l1=nn.Linear(input_dim,len(action_range))
         #self.l2=nn.Linear(int(input_dim/2),len(action_range))
         self.norm=nn.LayerNorm(len(action_range))
-        self.high=torch.tensor([a[1] for a in action_range])
-        self.low=torch.tensor([a[0] for a in action_range])
+        self.high=torch.tensor([a[1] for a in action_range],dtype=torch.float)
+        self.low=torch.tensor([a[0] for a in action_range],dtype=torch.float)
     def forward(self,x):
         x=self.norm(self.l1(x))
         x=(torch.min(x,self.high)+torch.max(x,self.low))/2
         return x.type(torch.int)
-        
-class AITrainer:
-    def __init__(self,aigame:AIGame,**kwargs):
+
+class AIAgent(nn.Module):
+    def __init__(self,n_pieces,grid_shape,action_range,**kwargs):
+        super(AIAgent,self).__init__()
         self.num_lstm_layers=kwargs.get('lstm_layers',3)
         self.embedding_dim=kwargs.get('embedding_dim',90)
-        self.hidden_dim=kwargs.get('hidden_dim',60)
         self.num_decoder_layers=kwargs.get('decoder_layers',3)
         
-        
-        self.aigame=aigame
-        self.encoder=GridEncoder(aigame.n_pieces,aigame.grid_shape,self.embedding_dim)
-        self.agent=MultilayerLSTMCell(self.embedding_dim,self.hidden_dim,self.num_lstm_layers)
-        self.decoder=ActionDecoder(self.hidden_dim,aigame.action_range)
-        self.hc=[(torch.zeros((1,self.hidden_dim)),torch.zeros((1,self.hidden_dim))) \
+        self.encoder=GridEncoder(n_pieces,grid_shape,self.embedding_dim)
+        self.agent=MultilayerLSTMCell(self.embedding_dim,self.num_lstm_layers)
+        self.decoder=ActionDecoder(self.embedding_dim,action_range)
+        self.hc=[(torch.zeros((1,self.embedding_dim)),torch.zeros((1,self.embedding_dim))) \
                  for _ in range(self.num_lstm_layers)]
-    def get_action(self):
-        state=self.aigame.get_board()
-        embed=self.encoder(state)
-        hc=self.agent(embed,self.hc)
+    def forward(self,x):
+        embed=self.encoder(x)
+        hc=self.agent((embed,self.hc))
         action=self.decoder(hc[-1][0])
         return action
+        
+
+        
