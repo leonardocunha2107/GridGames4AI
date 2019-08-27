@@ -34,8 +34,8 @@ class CategoricalConv(nn.Module):
        super(CategoricalConv,self).__init__()
        self.convs=[nn.Conv2d(in_channels=1,kernel_size=kernel_size,out_channels=filters_by_piece,padding=padding) for i in range(n_pieces)]
        self.grid_shape=grid_shape
-       self.__ones=torch.tensor(np.ones(grid_shape,dtype=int))
-       self.__zeros=torch.tensor(np.zeros(grid_shape,dtype=int))
+       self.__ones=torch.ones(grid_shape,dtype=torch.int)
+       self.__zeros=torch.zeros(grid_shape,dtype=torch.int)
      
    def forward(self,x):
        """
@@ -72,10 +72,6 @@ class GridEncoder(nn.Module):
                Number of intemediate convolutions. Defaults to 2"""
     def __init__(self,n_pieces,grid_shape,out_dim,**kwargs):
        
-               
-
-   
-          
         super(GridEncoder,self).__init__()
         
         self.kernel_size=kwargs.get('kernel_size',(3,3))
@@ -105,12 +101,64 @@ class GridEncoder(nn.Module):
         x=self.other_convs(x).view(1,-1)
         return self.linear(x)
         
+class MultilayerLSTMCell(nn.Module):
+    def __init__(self,input_dim,hidden_dim,n_layers):
+        super(MultilayerLSTMCell,self).__init__()
+        self.input_dim=input_dim
+        self.hidden_dim=hidden_dim
+        self.layers=[nn.LSTMCell(input_dim,hidden_dim) for _ in range(n_layers)]
         
-class AIActuator(nn.Module):
-    def __init__(self):
-        super(AIActuator,self).__init__()
-        self.v=nn.Linear(10,10)
+        
+        """
+            Parameters
+            ---------
+                t: tuple(tensor,list[tuple(tensor)])
+                    The input t corresponds to a tuple list of hidden and cell states for each layer
+            
+            Returns: tuple(list[tensor],list[tensor])
+                    Same as input
+        """
+    def forward(self,t):
+        
+         x,hc_in=t
+         assert (len(hc_in)==len(self.layers) and x.shape==(1,self.input_dim))
+         hc_out=[]
+         hc=None
+         for i in range(len(self.layers)):
+             x,hc=self.layers[i](x,hc_in[i])
+             hc_out.append(hc)
+         return hc_out
+
+class ActionDecoder(nn.Module):
+    def __init__(self,input_dim,action_range):
+        super(ActionDecoder,self).__init__()
+        self.l1=nn.Linear(input_dim,len(action_range))
+        #self.l2=nn.Linear(int(input_dim/2),len(action_range))
+        self.norm=nn.LayerNorm(len(action_range))
+        self.high=torch.tensor([a[1] for a in action_range])
+        self.low=torch.tensor([a[0] for a in action_range])
     def forward(self,x):
-        a=torch.tensor([1,2])
-        a.vi
-        return self.v(x)
+        x=self.norm(self.l1(x))
+        x=(torch.min(x,self.high)+torch.max(x,self.low))/2
+        return x.type(torch.int)
+        
+class AITrainer:
+    def __init__(self,aigame:AIGame,**kwargs):
+        self.num_lstm_layers=kwargs.get('lstm_layers',3)
+        self.embedding_dim=kwargs.get('embedding_dim',90)
+        self.hidden_dim=kwargs.get('hidden_dim',60)
+        self.num_decoder_layers=kwargs.get('decoder_layers',3)
+        
+        
+        self.aigame=aigame
+        self.encoder=GridEncoder(aigame.n_pieces,aigame.grid_shape,self.embedding_dim)
+        self.agent=MultilayerLSTMCell(self.embedding_dim,self.hidden_dim,self.num_lstm_layers)
+        self.decoder=ActionDecoder(self.hidden_dim,aigame.action_range)
+        self.hc=[(torch.zeros((1,self.hidden_dim)),torch.zeros((1,self.hidden_dim))) \
+                 for _ in range(self.num_lstm_layers)]
+    def get_action(self):
+        state=self.aigame.get_board()
+        embed=self.encoder(state)
+        hc=self.agent(embed,self.hc)
+        action=self.decoder(hc[-1][0])
+        return action
