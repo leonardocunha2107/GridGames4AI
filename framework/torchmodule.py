@@ -129,17 +129,18 @@ class MultilayerLSTMCell(nn.Module):
          return hc_out
 
 class ActionDecoder(nn.Module):
+    ##TODO: eliminate action_range
     def __init__(self,input_dim,action_range):
         super(ActionDecoder,self).__init__()
         self.l1=nn.Linear(input_dim,len(action_range))
-        #self.l2=nn.Linear(int(input_dim/2),len(action_range))
+        """self.l2=nn.Linear(int(input_dim/2),len(action_range))
         self.norm=nn.LayerNorm(len(action_range))
         self.high=torch.tensor([a[1] for a in action_range],dtype=torch.float)
-        self.low=torch.tensor([a[0] for a in action_range],dtype=torch.float)
+        self.low=torch.tensor([a[0] for a in action_range],dtype=torch.float)"""
     def forward(self,x):
-        x=self.norm(self.l1(x))
-        x=(torch.min(x,self.high)+torch.max(x,self.low))/2
-        return x.type(torch.int)
+        ##x=self.norm(self.l1(x))
+        #x=(torch.min(x,self.high)+torch.max(x,self.low))/2
+        return self.l1(x)
 
 class AIAgent(nn.Module):
     def __init__(self,n_pieces,grid_shape,action_range,**kwargs):

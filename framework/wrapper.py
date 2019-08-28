@@ -45,17 +45,48 @@ class AIGame:
                 
         ##---end of  validation
         self.game=game
+        self.board=None
+        self.__flipped=None
+        
+        ##TODO: Do it properly
+        self.piece_dict=None
+        if self.symmetric:
+            self.piece_dict={0:0,1:3,2:4,3:1,4:2}
+        
         self.n_pieces=sum([len(pieces) for pieces in self.pieces_toks.values()])
         self.__reset()
     def __reset(self):
         self.game.__init__()
         self.turn=0
+        self.board=self.game.get_board()
+        self.__flipped=False
+    def get_actions(self):
+        return [torch.tensor(move,dtype=torch.float) for move in self.game.get_actions()]
+    
+    def __flip(self):
+        ##TODO: Flip properly
+        if len(self.players)!=2 or not self.symmetric:
+            return
+    
+        board=self.game.get_board()
+        if not self.__flipped:
+            m,n=board.shape
+            for i in range(int(m/2)):
+                for j in range(n):
+                    board[i,j],board[m-i-1,n-j-1]=self.piece_dict[board[m-i-1,n-j-1]],self.piece_dict[board[i,j]]
+        self.__flipped=not self.__flipped
+        self.board=board
+                
     def get_board(self):
-        return torch.tensor(self.game.get_board())
+        return torch.tensor(self.board)
     def try_move(self,move):
         assert len(move)==len(self.action_range)
+        if self.__flipped:
+            #TODO: do it correctly
+            move=tuple(7-move[i] for  i in range(len(move)))
         try:
             self.game.move(move)
+            self.__flip()
             return True
         except GameException:
             return False

@@ -4,7 +4,7 @@ Input can be either '(i0,j0,i1,j1)' or (i0,j0),(i1,j1)
 (i0,j0) being the initial position of the piece to be moved and (i1,j1) the end position
 Enter 'exit' to quit
 """
-from .board import Checkers
+from board import Checkers
 import sys
 import time
 from framework import *
